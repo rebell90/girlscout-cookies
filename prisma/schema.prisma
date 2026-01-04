@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Authentication Models
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  
+  // User's data
+  customers            Customer[]
+  orders               Order[]
+  inventoryTransactions InventoryTransaction[]
+  routeLocations       RouteLocation[]
+  cookieTypes          CookieType[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Cookie types (Thin Mints, Samoas, etc.)
+model CookieType {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  price       Decimal     @db.Decimal(10, 2)
+  description String?
+  active      Boolean     @default(true)
+  
+  // Dietary and special tags
+  isGlutenFree Boolean    @default(false)
+  isPeanutFree Boolean    @default(false)
+  isVegan      Boolean    @default(false)
+  isNew        Boolean    @default(false)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  inventoryItems InventoryTransaction[]
+  orderItems     OrderItem[]
+
+  @@unique([userId, name])
+  @@map("cookie_types")
+}
+
+// Track all inventory transactions (received from troop, adjustments, etc.)
+model InventoryTransaction {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  cookieTypeId String
+  cookieType   CookieType @relation(fields: [cookieTypeId], references: [id])
+  
+  quantity     Int        // Positive for received, negative for adjustments
+  type         String     // "RECEIVED", "ADJUSTMENT", "RETURN"
+  notes        String?
+  date         DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+
+  @@map("inventory_transactions")
+  @@index([cookieTypeId])
+  @@index([userId])
+}
+
+// Customers who buy cookies
+model Customer {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  neighborhood String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders        Order[]
+  routeLocation RouteLocation?
+
+  @@map("customers")
+  @@index([userId])
+}
+
+// Orders from customers
+model Order {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  
+  orderDate  DateTime @default(now())
+  totalAmount Decimal @db.Decimal(10, 2)
+  
+  // Payment tracking
+  amountPaid  Decimal  @db.Decimal(10, 2) @default(0)
+  isPaid      Boolean  @default(false)
+  paidAt      DateTime?
+  
+  // Delivery tracking
+  isDelivered Boolean  @default(false)
+  deliveredAt DateTime?
+  
+  notes       String?
+  source      String   @default("DOOR_TO_DOOR")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+
+  @@map("orders")
+  @@index([customerId])
+  @@index([isPaid])
+  @@index([isDelivered])
+  @@index([userId])
+}
+
+// Line items for each order
+model OrderItem {
+  id           String     @id @default(cuid())
+  orderId      String
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  cookieTypeId String
+  cookieType   CookieType @relation(fields: [cookieTypeId], references: [id])
+  
+  quantity     Int
+  pricePerBox  Decimal    @db.Decimal(10, 2)
+  subtotal     Decimal    @db.Decimal(10, 2)
+
+  @@map("order_items")
+  @@index([orderId])
+  @@index([cookieTypeId])
+}
+
+// Track door-to-door route visits
+model RouteLocation {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  address      String
+  neighborhood String?
+  
+  // Visit tracking
+  visited      Boolean   @default(false)
+  visitedAt    DateTime?
+  
+  // Outcome of visit
+  status       String?
+  
+  // Link to customer if they ordered
+  customerId   String?   @unique
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  
+  notes        String?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("route_locations")
+  @@index([neighborhood])
+  @@index([visited])
+  @@index([status])
+  @@index([userId])
+}
