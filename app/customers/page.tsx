@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { CustomerModal } from './CustomerModal'
 
+export const dynamic = 'force-dynamic'
+
 interface OrderItem {
   id: string
   quantity: number

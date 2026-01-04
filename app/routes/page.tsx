@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { RouteModal } from './RouteModal'
 
+export const dynamic = 'force-dynamic'
+
 interface Customer {
   id: string
   name: string
