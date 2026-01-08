@@ -23,11 +23,53 @@ interface RouteLocation {
   customer: Customer | null
 }
 
+type FilterType = 'all' | 'not_visited' | 'ordered' | 'callback'
+
+// Status Badge Component - eliminates repeated conditional rendering
+function StatusBadge({ status }: { status: string | null }) {
+  if (!status) return null
+
+  const statusConfig = {
+    ORDERED: { bg: 'bg-green-100', text: 'text-green-800', label: '✓ Ordered' },
+    DECLINED: { bg: 'bg-red-100', text: 'text-red-800', label: '✗ Declined' },
+    CALLBACK: { bg: 'bg-purple-100', text: 'text-purple-800', label: '📞 Callback' },
+    NOT_VISITED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Not Visited' },
+  } as const
+
+  const config = statusConfig[status as keyof typeof statusConfig]
+  if (!config) return null
+
+  return (
+    <span className={`px-3 py-1 ${config.bg} ${config.text} text-xs font-semibold rounded-full`}>
+      {config.label}
+    </span>
+  )
+}
+
+// Helper to check if route matches current filters
+function routeMatchesFilters(
+  route: RouteLocation,
+  statusFilter: FilterType,
+  neighborhoodFilter: string
+): boolean {
+  const statusMatch =
+    statusFilter === 'all' ||
+    (statusFilter === 'not_visited' && !route.visited) ||
+    (statusFilter === 'ordered' && route.status === 'ORDERED') ||
+    (statusFilter === 'callback' && route.status === 'CALLBACK')
+
+  const neighborhoodMatch =
+    neighborhoodFilter === 'all' ||
+    route.neighborhood === neighborhoodFilter
+
+  return statusMatch && neighborhoodMatch
+}
+
 export default function RoutesPage() {
   const [routes, setRoutes] = useState<RouteLocation[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingRoute, setEditingRoute] = useState<RouteLocation | undefined>()
-  const [filter, setFilter] = useState<'all' | 'not_visited' | 'ordered' | 'callback'>('all')
+  const [filter, setFilter] = useState<FilterType>('all')
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all')
 
   useEffect(() => {
@@ -88,22 +130,30 @@ export default function RoutesPage() {
     fetchRoutes()
   }
 
+  // Calculate stats in a single pass through routes (more efficient than 5 separate filters)
+  const stats = routes.reduce(
+    (acc, route) => {
+      acc.total++
+      if (route.visited) acc.visited++
+      if (!route.visited) acc.notVisited++
+      if (route.status === 'ORDERED') acc.ordered++
+      if (route.status === 'CALLBACK') acc.callback++
+      return acc
+    },
+    { total: 0, visited: 0, notVisited: 0, ordered: 0, callback: 0 }
+  )
+
   // Get unique neighborhoods
-  const neighborhoods = Array.from(new Set(routes.map(r => r.neighborhood).filter(Boolean))) as string[]
+  const neighborhoods = Array.from(
+    new Set(routes.map(r => r.neighborhood).filter(Boolean))
+  ) as string[]
 
-  // Filter routes
-  const filteredRoutes = routes.filter(route => {
-    const statusMatch = filter === 'all' || 
-      (filter === 'not_visited' && !route.visited) ||
-      (filter === 'ordered' && route.status === 'ORDERED') ||
-      (filter === 'callback' && route.status === 'CALLBACK')
-    
-    const neighborhoodMatch = neighborhoodFilter === 'all' || route.neighborhood === neighborhoodFilter
+  // Filter routes using extracted helper function
+  const filteredRoutes = routes.filter(route =>
+    routeMatchesFilters(route, filter, neighborhoodFilter)
+  )
 
-    return statusMatch && neighborhoodMatch
-  })
-
-  // Group by neighborhood
+  // Group filtered routes by neighborhood
   const routesByNeighborhood = filteredRoutes.reduce((acc, route) => {
     const neighborhood = route.neighborhood || 'No Neighborhood'
     if (!acc[neighborhood]) {
@@ -112,14 +162,6 @@ export default function RoutesPage() {
     acc[neighborhood].push(route)
     return acc
   }, {} as Record<string, RouteLocation[]>)
-
-  const stats = {
-    total: routes.length,
-    visited: routes.filter(r => r.visited).length,
-    notVisited: routes.filter(r => !r.visited).length,
-    ordered: routes.filter(r => r.status === 'ORDERED').length,
-    callback: routes.filter(r => r.status === 'CALLBACK').length,
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -169,46 +211,24 @@ export default function RoutesPage() {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <div className="flex flex-wrap gap-3 mb-3">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm ${
-                filter === 'all' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              All ({routes.length})
-            </button>
-            <button
-              onClick={() => setFilter('not_visited')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm ${
-                filter === 'not_visited' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Not Visited ({stats.notVisited})
-            </button>
-            <button
-              onClick={() => setFilter('ordered')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm ${
-                filter === 'ordered' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Ordered ({stats.ordered})
-            </button>
-            <button
-              onClick={() => setFilter('callback')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm ${
-                filter === 'callback' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Callback ({stats.callback})
-            </button>
+            {[
+              { value: 'all' as const, label: 'All', count: routes.length },
+              { value: 'not_visited' as const, label: 'Not Visited', count: stats.notVisited },
+              { value: 'ordered' as const, label: 'Ordered', count: stats.ordered },
+              { value: 'callback' as const, label: 'Callback', count: stats.callback },
+            ].map(({ value, label, count }) => (
+              <button
+                key={value}
+                onClick={() => setFilter(value)}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+                  filter === value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                {label} ({count})
+              </button>
+            ))}
           </div>
 
           {neighborhoods.length > 0 && (
@@ -258,28 +278,7 @@ export default function RoutesPage() {
                         )}
                       </div>
                       <div className="ml-4 flex flex-col gap-2 items-end">
-                        <div className="flex gap-2">
-                          {location.status === 'ORDERED' && (
-                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                              ✓ Ordered
-                            </span>
-                          )}
-                          {location.status === 'DECLINED' && (
-                            <span className="px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
-                              ✗ Declined
-                            </span>
-                          )}
-                          {location.status === 'CALLBACK' && (
-                            <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
-                              📞 Callback
-                            </span>
-                          )}
-                          {location.status === 'NOT_VISITED' && (
-                            <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
-                              Not Visited
-                            </span>
-                          )}
-                        </div>
+                        <StatusBadge status={location.status} />
                         <div className="flex gap-2">
                           <button
                             onClick={() => toggleVisited(location.id, location.visited)}
