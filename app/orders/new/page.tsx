@@ -200,7 +200,7 @@ function NewOrderForm() {
             </div>
             <div className="space-y-3">
               {orderItems.map((item, index) => (
-                <div key={index} className="flex gap-3">
+                <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <select
                     value={item.cookieTypeId}
                     onChange={(e) => updateOrderItem(index, 'cookieTypeId', e.target.value)}
@@ -214,23 +214,26 @@ function NewOrderForm() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateOrderItem(index, 'quantity', parseInt(e.target.value))}
-                    required
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  />
-                  {orderItems.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOrderItem(index)}
-                      className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold"
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateOrderItem(index, 'quantity', parseInt(e.target.value))}
+                      required
+                      placeholder="Qty"
+                      className="w-20 sm:w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    />
+                    {orderItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeOrderItem(index)}
+                        className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold whitespace-nowrap"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
