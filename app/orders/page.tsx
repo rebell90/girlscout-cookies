@@ -209,8 +209,8 @@ export default function OrdersPage() {
                   <button
                     onClick={() => togglePaid(order.id, order.isPaid)}
                     className={`px-3 py-1 rounded text-sm font-semibold ${
-                      order.isPaid 
-                        ? 'bg-green-100 text-green-800' 
+                      order.isPaid
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                     }`}
                   >
@@ -219,8 +219,8 @@ export default function OrdersPage() {
                   <button
                     onClick={() => toggleDelivered(order.id, order.isDelivered)}
                     className={`px-3 py-1 rounded text-sm font-semibold ${
-                      order.isDelivered 
-                        ? 'bg-blue-100 text-blue-800' 
+                      order.isDelivered
+                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
@@ -230,12 +230,20 @@ export default function OrdersPage() {
                     {order.source.replace('_', ' ')}
                   </span>
                 </div>
-                <button
-                  onClick={() => handleDelete(order.id)}
-                  className="text-sm text-red-600 hover:text-red-800 font-semibold"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-3">
+                  <Link
+                    href={`/orders/${order.id}/edit`}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(order.id)}
+                    className="text-sm text-red-600 hover:text-red-800 font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
