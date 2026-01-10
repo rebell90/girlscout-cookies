@@ -6,7 +6,6 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 interface Order {
-  paymentMethod: ReactNode
   id: string
   orderDate: string
   totalAmount: number
@@ -14,6 +13,7 @@ interface Order {
   isPaid: boolean
   isDelivered: boolean
   source: string
+  paymentMethod: string
   customer: {
     id: string
     name: string
