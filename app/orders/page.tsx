@@ -6,6 +6,7 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 interface Order {
+  paymentMethod: ReactNode
   id: string
   orderDate: string
   totalAmount: number
@@ -168,6 +169,11 @@ export default function OrdersPage() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{order.customer.name}</h3>
+                  {order.paymentMethod && (
+                            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded">
+                              {order.paymentMethod}
+                            </span>
+                          )}
                   {order.customer.phone && (
                     <p className="text-sm text-gray-700">{order.customer.phone}</p>
                   )}

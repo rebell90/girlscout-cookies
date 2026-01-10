@@ -35,6 +35,7 @@ function NewOrderForm() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([{ cookieTypeId: '', quantity: 1 }])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [paymentMethod, setPaymentMethod] = useState('CASH')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -104,6 +105,7 @@ function NewOrderForm() {
         body: JSON.stringify({
           customerId: selectedCustomerId,
           source,
+          paymentMethod,
           items: orderItems.filter(item => item.cookieTypeId && item.quantity > 0)
         }),
       })
@@ -182,6 +184,25 @@ function NewOrderForm() {
               <option value="DOOR_TO_DOOR">Door-to-Door</option>
               <option value="ONLINE">Online</option>
               <option value="BOOTH">Booth</option>
+            </select>
+          </div>
+           {/* NEW: Payment Method */}
+          <div>
+            <label htmlFor="paymentMethod" className="block text-sm font-semibold text-gray-900 mb-1">
+              Payment Method
+            </label>
+            <select
+              id="paymentMethod"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+            >
+              <option value="CASH">Cash</option>
+              <option value="VENMO">Venmo</option>
+              <option value="ONLINE">Pre-Paid Online</option>
+              <option value="CHECK">Check</option>
+              <option value="CARD">Credit or Debit Card</option>
+              <option value="OTHER">Other</option>
             </select>
           </div>
 

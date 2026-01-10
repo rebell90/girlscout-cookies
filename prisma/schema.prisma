@@ -155,6 +155,7 @@ model Order {
   amountPaid  Decimal  @db.Decimal(10, 2) @default(0)
   isPaid      Boolean  @default(false)
   paidAt      DateTime?
+  paymentMethod String? // NEW FIELD: "CASH", "VENMO", "ONLINE", "CHECK", etc.
   
   // Delivery tracking
   isDelivered Boolean  @default(false)

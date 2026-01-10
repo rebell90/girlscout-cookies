@@ -105,6 +105,7 @@ export async function POST(request: Request) {
         customerId: body.customerId,
         totalAmount,
         source: body.source || 'DOOR_TO_DOOR',
+        paymentMethod: body.paymentMethod || null,
         orderItems: {
           create: orderItemsData
         }
