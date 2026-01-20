@@ -150,7 +150,8 @@ model Order {
   
   orderDate  DateTime @default(now())
   totalAmount Decimal @db.Decimal(10, 2)
-  
+  donation    Decimal @db.Decimal(10, 2) @default(0)
+
   // Payment tracking
   amountPaid  Decimal  @db.Decimal(10, 2) @default(0)
   isPaid      Boolean  @default(false)
