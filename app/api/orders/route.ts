@@ -40,6 +40,7 @@ export async function GET() {
     const ordersWithNumbers = orders.map(order => ({
       ...order,
       totalAmount: Number(order.totalAmount),
+      donation: Number(order.donation),
       amountPaid: Number(order.amountPaid),
       orderItems: order.orderItems.map(item => ({
         ...item,
@@ -79,17 +80,17 @@ export async function POST(request: Request) {
     const cookieTypes = await prisma.cookieType.findMany({
       where: { userId: user.id }
     })
-    
+
     // Calculate total
     let totalAmount = new Decimal(0)
     const orderItemsData = body.items.map((item: OrderItem) => {
       const cookieType = cookieTypes.find(ct => ct.id === item.cookieTypeId)
       if (!cookieType) throw new Error('Cookie type not found')
-      
+
       const pricePerBox = new Decimal(cookieType.price)
       const subtotal = pricePerBox.mul(item.quantity)
       totalAmount = totalAmount.add(subtotal)
-      
+
       return {
         cookieTypeId: item.cookieTypeId,
         quantity: item.quantity,
@@ -98,12 +99,17 @@ export async function POST(request: Request) {
       }
     })
 
+    // Add donation to total
+    const donation = new Decimal(body.donation || 0)
+    totalAmount = totalAmount.add(donation)
+
     // Create order with items
     const order = await prisma.order.create({
       data: {
         userId: user.id,
         customerId: body.customerId,
         totalAmount,
+        donation,
         source: body.source || 'DOOR_TO_DOOR',
         paymentMethod: body.paymentMethod || null,
         orderItems: {

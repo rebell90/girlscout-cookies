@@ -50,6 +50,7 @@ export async function GET(
     const orderWithNumbers = {
       ...order,
       totalAmount: Number(order.totalAmount),
+      donation: Number(order.donation),
       amountPaid: Number(order.amountPaid),
       orderItems: order.orderItems.map(item => ({
         ...item,
@@ -124,6 +125,10 @@ export async function PUT(
       }
     })
 
+    // Add donation to total
+    const donation = new Decimal(body.donation || 0)
+    totalAmount = totalAmount.add(donation)
+
     // Update order with items (delete existing items and recreate)
     const order = await prisma.$transaction(async (tx) => {
       // Delete existing order items
@@ -137,6 +142,7 @@ export async function PUT(
         data: {
           customerId: body.customerId,
           totalAmount,
+          donation,
           source: body.source || 'DOOR_TO_DOOR',
           paymentMethod: body.paymentMethod || null,
           notes: body.notes || null,

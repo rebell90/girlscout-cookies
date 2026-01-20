@@ -33,6 +33,7 @@ function NewOrderForm() {
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [source, setSource] = useState('DOOR_TO_DOOR')
   const [orderItems, setOrderItems] = useState<OrderItem[]>([{ cookieTypeId: '', quantity: 1 }])
+  const [donation, setDonation] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState('CASH')
@@ -88,10 +89,11 @@ function NewOrderForm() {
   }
 
   function calculateTotal() {
-    return orderItems.reduce((sum, item) => {
+    const itemsTotal = orderItems.reduce((sum, item) => {
       const cookie = cookieTypes.find(c => c.id === item.cookieTypeId)
       return sum + (cookie ? cookie.price * item.quantity : 0)
     }, 0)
+    return itemsTotal + donation
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -106,6 +108,7 @@ function NewOrderForm() {
           customerId: selectedCustomerId,
           source,
           paymentMethod,
+          donation: donation,
           items: orderItems.filter(item => item.cookieTypeId && item.quantity > 0)
         }),
       })
@@ -258,6 +261,28 @@ function NewOrderForm() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="donation" className="block text-sm font-semibold text-gray-900 mb-1">
+              Monetary Donation (Optional)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-gray-600">$</span>
+              <input
+                id="donation"
+                type="number"
+                min="0"
+                step="0.01"
+                value={donation}
+                onChange={(e) => setDonation(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              />
+            </div>
+            <p className="text-sm text-gray-600 mt-1">
+              Add a donation amount to support the troop
+            </p>
           </div>
 
           <div className="border-t pt-4">

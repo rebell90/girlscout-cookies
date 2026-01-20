@@ -9,6 +9,7 @@ interface Order {
   id: string
   orderDate: string
   totalAmount: number
+  donation: number
   amountPaid: number
   isPaid: boolean
   isDelivered: boolean
@@ -201,6 +202,14 @@ export default function OrdersPage() {
                     <span className="text-gray-700">${item.subtotal.toFixed(2)}</span>
                   </div>
                 ))}
+                {order.donation > 0 && (
+                  <div className="flex justify-between text-sm border-t pt-1">
+                    <span className="text-gray-800 font-semibold">
+                      Donation
+                    </span>
+                    <span className="text-green-700 font-semibold">${order.donation.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Status and Actions */}
